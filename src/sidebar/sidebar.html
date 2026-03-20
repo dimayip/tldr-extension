@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TLDR - AI阅读助手</title>
+  <link rel="stylesheet" href="sidebar.css">
+</head>
+<body>
+  <div id="app">
+    <!-- 顶部工具栏 -->
+    <header class="toolbar">
+      <div class="toolbar-left">
+        <div class="logo">
+          <span class="logo-icon">📖</span>
+          <span class="logo-text">TLDR</span>
+        </div>
+        <div class="page-info" id="pageInfo">
+          <span class="page-title" id="pageTitle">加载中...</span>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <button class="icon-btn" id="refreshBtn" title="重新提取内容">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+        <button class="icon-btn" id="settingsBtn" title="设置">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- 标签页切换 -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="summary">📝 摘要</button>
+      <button class="tab-btn" data-tab="chat">💬 对话</button>
+      <button class="tab-btn" data-tab="notes">📌 笔记</button>
+    </div>
+
+    <!-- 摘要面板 -->
+    <div class="tab-panel active" id="summaryPanel">
+      <div class="summary-actions">
+        <button class="action-btn primary" id="summarizeBtn">
+          <span class="btn-icon">✨</span>
+          <span>生成摘要</span>
+        </button>
+        <div class="summary-options">
+          <select id="summaryType" class="select-sm">
+            <option value="brief">简短摘要</option>
+            <option value="detailed">详细摘要</option>
+            <option value="bullets">要点列表</option>
+            <option value="outline">文章大纲</option>
+          </select>
+          <select id="summaryLang" class="select-sm">
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="summary-content" id="summaryContent">
+        <div class="empty-state" id="summaryEmpty">
+          <div class="empty-icon">📄</div>
+          <p>点击"生成摘要"按钮，AI将为您总结当前页面内容</p>
+        </div>
+        <div class="summary-result hidden" id="summaryResult">
+          <div class="result-header">
+            <span class="result-label">AI摘要</span>
+            <div class="result-actions">
+              <button class="mini-btn" id="copySummaryBtn" title="复制">📋</button>
+              <button class="mini-btn" id="saveSummaryBtn" title="保存到笔记">📌</button>
+            </div>
+          </div>
+          <div class="result-text" id="summaryText"></div>
+        </div>
+      </div>
+      
+      <!-- 快速问题 -->
+      <div class="quick-questions">
+        <div class="quick-title">快速提问</div>
+        <div class="quick-btns">
+          <button class="quick-btn" data-prompt="这篇文章的主要观点是什么？">主要观点</button>
+          <button class="quick-btn" data-prompt="文章中有哪些关键数据或事实？">关键数据</button>
+          <button class="quick-btn" data-prompt="请列出文章的优缺点">优缺点</button>
+          <button class="quick-btn" data-prompt="这篇文章对我有什么实际价值？">实用价值</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 对话面板 -->
+    <div class="tab-panel" id="chatPanel">
+      <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+          <div class="welcome-msg">
+            <div class="welcome-icon">🤖</div>
+            <div class="welcome-text">
+              <strong>你好！我是TLDR AI助手</strong>
+              <p>我已读取当前页面内容，你可以向我提问任何关于这篇文章的问题。</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="chat-input-area">
+          <div class="context-indicator" id="contextIndicator">
+            <span class="context-dot"></span>
+            <span id="contextStatus">正在加载页面内容...</span>
+          </div>
+          <div class="input-wrapper">
+            <textarea 
+              id="chatInput" 
+              placeholder="输入你的问题... (Ctrl+Enter 发送)" 
+              rows="3"
+              maxlength="2000"
+            ></textarea>
+            <div class="input-actions">
+              <span class="char-count" id="charCount">0/2000</span>
+              <button class="send-btn" id="sendBtn" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="chat-toolbar">
+            <button class="tool-btn" id="clearChatBtn" title="清空对话">🗑️ 清空</button>
+            <button class="tool-btn" id="exportChatBtn" title="导出对话">📤 导出</button>
+            <button class="tool-btn" id="newContextBtn" title="重新加载页面内容">🔄 刷新上下文</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 笔记面板 -->
+    <div class="tab-panel" id="notesPanel">
+      <div class="notes-toolbar">
+        <button class="action-btn" id="addNoteBtn">+ 新建笔记</button>
+        <button class="action-btn" id="exportNotesBtn">📤 导出</button>
+      </div>
+      <div class="notes-list" id="notesList">
+        <div class="empty-state">
+          <div class="empty-icon">📌</div>
+          <p>还没有笔记，从摘要或对话中保存内容，或点击"新建笔记"</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loadingText">AI思考中...</div>
+    </div>
+
+    <!-- 错误提示 -->
+    <div class="toast hidden" id="toast"></div>
+  </div>
+
+  <script src="sidebar.js"></script>
+</body>
+</html>

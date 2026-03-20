@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TLDR - 设置</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="settings-container">
+    <header class="settings-header">
+      <div class="header-logo">
+        <span class="logo-icon">📖</span>
+        <h1>TLDR 设置</h1>
+      </div>
+      <p class="header-desc">配置你的AI大模型，开始智能阅读体验</p>
+    </header>
+
+    <div class="settings-content">
+      <!-- AI提供商选择 -->
+      <section class="settings-section">
+        <h2 class="section-title">
+          <span class="section-icon">🤖</span>
+          AI提供商
+        </h2>
+        <div class="provider-grid">
+          <label class="provider-card" data-provider="openai">
+            <input type="radio" name="aiProvider" value="openai">
+            <div class="provider-info">
+              <div class="provider-logo">🟢</div>
+              <div class="provider-name">OpenAI</div>
+              <div class="provider-desc">GPT-4o, GPT-4o-mini等</div>
+            </div>
+            <div class="provider-check">✓</div>
+          </label>
+          
+          <label class="provider-card" data-provider="claude">
+            <input type="radio" name="aiProvider" value="claude">
+            <div class="provider-info">
+              <div class="provider-logo">🟣</div>
+              <div class="provider-name">Claude</div>
+              <div class="provider-desc">Claude 3.5 Sonnet/Haiku等</div>
+            </div>
+            <div class="provider-check">✓</div>
+          </label>
+          
+          <label class="provider-card" data-provider="gemini">
+            <input type="radio" name="aiProvider" value="gemini">
+            <div class="provider-info">
+              <div class="provider-logo">🔵</div>
+              <div class="provider-name">Gemini</div>
+              <div class="provider-desc">Gemini 1.5 Flash/Pro等</div>
+            </div>
+            <div class="provider-check">✓</div>
+          </label>
+          
+          <label class="provider-card" data-provider="custom">
+            <input type="radio" name="aiProvider" value="custom">
+            <div class="provider-info">
+              <div class="provider-logo">⚙️</div>
+              <div class="provider-name">自定义</div>
+              <div class="provider-desc">兼容OpenAI格式的API</div>
+            </div>
+            <div class="provider-check">✓</div>
+          </label>
+        </div>
+      </section>
+
+      <!-- OpenAI配置 -->
+      <section class="settings-section provider-config" id="openaiConfig">
+        <h2 class="section-title">
+          <span class="section-icon">🟢</span>
+          OpenAI 配置
+        </h2>
+        <div class="form-group">
+          <label class="form-label">API Key <span class="required">*</span></label>
+          <div class="input-with-btn">
+            <input type="password" id="openaiApiKey" class="form-input" placeholder="sk-...">
+            <button class="toggle-visibility" data-target="openaiApiKey">👁</button>
+          </div>
+          <p class="form-hint">
+            在 <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI控制台</a> 获取API Key
+          </p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">模型</label>
+          <select id="openaiModel" class="form-select">
+            <option value="gpt-4o-mini">GPT-4o Mini（推荐，性价比高）</option>
+            <option value="gpt-4o">GPT-4o（最强，较贵）</option>
+            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+            <option value="gpt-3.5-turbo">GPT-3.5 Turbo（最便宜）</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">API Base URL（可选，用于代理）</label>
+          <input type="text" id="openaiBaseUrl" class="form-input" placeholder="https://api.openai.com/v1">
+          <p class="form-hint">如果使用代理服务，填写代理地址</p>
+        </div>
+      </section>
+
+      <!-- Claude配置 -->
+      <section class="settings-section provider-config hidden" id="claudeConfig">
+        <h2 class="section-title">
+          <span class="section-icon">🟣</span>
+          Claude 配置
+        </h2>
+        <div class="form-group">
+          <label class="form-label">API Key <span class="required">*</span></label>
+          <div class="input-with-btn">
+            <input type="password" id="claudeApiKey" class="form-input" placeholder="sk-ant-...">
+            <button class="toggle-visibility" data-target="claudeApiKey">👁</button>
+          </div>
+          <p class="form-hint">
+            在 <a href="https://console.anthropic.com/" target="_blank">Anthropic控制台</a> 获取API Key
+          </p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">模型</label>
+          <select id="claudeModel" class="form-select">
+            <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku（推荐，快速）</option>
+            <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet（最强）</option>
+            <option value="claude-3-haiku-20240307">Claude 3 Haiku（经济）</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Gemini配置 -->
+      <section class="settings-section provider-config hidden" id="geminiConfig">
+        <h2 class="section-title">
+          <span class="section-icon">🔵</span>
+          Gemini 配置
+        </h2>
+        <div class="form-group">
+          <label class="form-label">API Key <span class="required">*</span></label>
+          <div class="input-with-btn">
+            <input type="password" id="geminiApiKey" class="form-input" placeholder="AIza...">
+            <button class="toggle-visibility" data-target="geminiApiKey">👁</button>
+          </div>
+          <p class="form-hint">
+            在 <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a> 获取API Key（免费）
+          </p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">模型</label>
+          <select id="geminiModel" class="form-select">
+            <option value="gemini-1.5-flash">Gemini 1.5 Flash（推荐，免费）</option>
+            <option value="gemini-1.5-pro">Gemini 1.5 Pro（更强）</option>
+            <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash（最新）</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- 自定义API配置 -->
+      <section class="settings-section provider-config hidden" id="customConfig">
+        <h2 class="section-title">
+          <span class="section-icon">⚙️</span>
+          自定义API配置
+        </h2>
+        <p class="section-desc">支持任何兼容OpenAI格式的API，如DeepSeek、Qwen、Moonshot等</p>
+        <div class="form-group">
+          <label class="form-label">API Base URL <span class="required">*</span></label>
+          <input type="text" id="customBaseUrl" class="form-input" placeholder="https://api.deepseek.com/v1">
+          <p class="form-hint">常用：DeepSeek: https://api.deepseek.com/v1 | 月之暗面: https://api.moonshot.cn/v1</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">API Key <span class="required">*</span></label>
+          <div class="input-with-btn">
+            <input type="password" id="customApiKey" class="form-input" placeholder="你的API Key">
+            <button class="toggle-visibility" data-target="customApiKey">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">模型名称 <span class="required">*</span></label>
+          <input type="text" id="customModel" class="form-input" placeholder="如: deepseek-chat, moonshot-v1-8k">
+          <p class="form-hint">填写API支持的模型名称</p>
+        </div>
+      </section>
+
+      <!-- 通用设置 -->
+      <section class="settings-section">
+        <h2 class="section-title">
+          <span class="section-icon">⚙️</span>
+          通用设置
+        </h2>
+        <div class="form-group">
+          <label class="form-label">回复语言</label>
+          <select id="language" class="form-select">
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">最大回复长度（tokens）</label>
+          <div class="range-group">
+            <input type="range" id="maxTokens" min="500" max="8000" step="500" value="2000">
+            <span class="range-value" id="maxTokensValue">2000</span>
+          </div>
+          <p class="form-hint">越大回复越详细，但消耗更多token</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">创造性（Temperature）</label>
+          <div class="range-group">
+            <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7">
+            <span class="range-value" id="temperatureValue">0.7</span>
+          </div>
+          <p class="form-hint">0=精确保守，1=创意发散</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label toggle-label">
+            <span>打开页面时自动生成摘要</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="autoSummarize">
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+      </section>
+
+      <!-- 测试连接 -->
+      <section class="settings-section">
+        <h2 class="section-title">
+          <span class="section-icon">🔌</span>
+          测试连接
+        </h2>
+        <div class="test-area">
+          <button class="btn-test" id="testBtn">测试AI连接</button>
+          <div class="test-result hidden" id="testResult"></div>
+        </div>
+      </section>
+
+      <!-- 数据管理 -->
+      <section class="settings-section">
+        <h2 class="section-title">
+          <span class="section-icon">🗄️</span>
+          数据管理
+        </h2>
+        <div class="data-actions">
+          <button class="btn-secondary" id="exportDataBtn">📤 导出所有数据</button>
+          <button class="btn-danger" id="clearDataBtn">🗑️ 清除所有数据</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <footer class="settings-footer">
+      <div class="footer-info">
+        <span>TLDR v1.0.0</span>
+        <span>·</span>
+        <a href="https://github.com" target="_blank">GitHub</a>
+      </div>
+      <div class="footer-actions">
+        <button class="btn-secondary" id="resetBtn">重置默认</button>
+        <button class="btn-primary" id="saveBtn">保存设置</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- 保存成功提示 -->
+  <div class="save-toast hidden" id="saveToast">✅ 设置已保存</div>
+
+  <script src="settings.js"></script>
+</body>
+</html>
