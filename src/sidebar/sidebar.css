@@ -85,6 +85,10 @@ body {
 .page-info {
   min-width: 0;
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
 }
 
 .page-title {
@@ -95,6 +99,22 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 160px;
+}
+
+.page-status {
+  flex-shrink: 0;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--primary-light);
+  color: var(--primary);
+  white-space: nowrap;
+  animation: fadeIn 0.2s ease;
+}
+
+.page-status.fade-out {
+  opacity: 0;
+  transition: opacity 0.4s;
 }
 
 .toolbar-right {
@@ -305,10 +325,11 @@ body {
 .result-text p { margin: 4px 0; }
 .result-text strong { color: var(--primary); }
 
-/* 快速问题 */
+/* 快速问题（位于对话面板，输入区上方） */
 .quick-questions {
   border-top: 1px solid var(--border-light);
-  padding-top: 12px;
+  padding: 8px 12px 0;
+  flex-shrink: 0;
 }
 
 .quick-title {
@@ -317,7 +338,7 @@ body {
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .quick-btns {
@@ -327,7 +348,7 @@ body {
 }
 
 .quick-btn {
-  padding: 5px 10px;
+  padding: 4px 10px;
   border: 1px solid var(--border);
   border-radius: 20px;
   background: var(--bg);
@@ -344,6 +365,22 @@ body {
   background: var(--primary-light);
 }
 
+.quick-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quick-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.quick-btn.active:hover {
+  background: var(--primary-hover);
+  color: #fff;
+}
+
 /* ===== 对话面板 ===== */
 #chatPanel {
   overflow: hidden;
@@ -353,6 +390,16 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+}
+
+/* 摘要快捷栏（位于对话面板顶部） —— 保留兼容样式 */
+.summary-bar {
+  display: none;
+}
+
+/* 沉浸式翻译栏 —— 保留兼容样式 */
+.translate-bar {
+  display: none;
 }
 
 .chat-messages {
@@ -378,6 +425,20 @@ body {
 .welcome-text { font-size: 12px; line-height: 1.6; }
 .welcome-text strong { color: var(--primary); display: block; margin-bottom: 4px; }
 .welcome-text p { color: var(--text-secondary); }
+
+/* 系统提示（tab 切换/页面更新等） */
+.system-notice {
+  align-self: center;
+  max-width: 90%;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  margin: 4px 0;
+  animation: fadeIn 0.2s ease;
+}
 
 /* 消息气泡 */
 .message {
@@ -459,12 +520,46 @@ body {
 .message-time {
   font-size: 10px;
   color: var(--text-muted);
+}
+
+.message-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 0 4px;
 }
 
+.message-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.message:hover .message-actions { opacity: 1; }
+
+.message-actions .mini-btn {
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+}
+
+.message.user .message-meta { justify-content: flex-end; }
 .message.user .message-time { text-align: right; }
 
+.message-bubble.error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: var(--danger);
+}
+
 /* 打字动画 */
+.typing-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .typing-indicator {
   display: flex;
   gap: 4px;
@@ -489,6 +584,25 @@ body {
 @keyframes typing {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
   30% { transform: translateY(-4px); opacity: 1; }
+}
+
+.cancel-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 11px;
+  font-family: var(--font);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.cancel-btn:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: #fef2f2;
 }
 
 /* 输入区域 */
@@ -669,38 +783,6 @@ body {
   gap: 4px;
   margin-top: 8px;
   justify-content: flex-end;
-}
-
-/* ===== 加载遮罩 ===== */
-.loading-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(255,255,255,0.85);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  z-index: 100;
-  backdrop-filter: blur(2px);
-}
-
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--border);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.loading-text {
-  font-size: 13px;
-  color: var(--text-secondary);
 }
 
 /* ===== Toast提示 ===== */

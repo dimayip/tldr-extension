@@ -15,8 +15,9 @@ const DEFAULT_SETTINGS = {
   customApiKey: '',
   customModel: '',
   customBaseUrl: '',
-  language: 'zh',
-  autoSummarize: false,
+  language: 'auto',
+  autoSummarize: true,
+  debugMode: false,
   maxTokens: 2000,
   temperature: 0.7
 };
@@ -50,12 +51,14 @@ async function loadSettings() {
   $('customModel').value = merged.customModel || '';
   $('customBaseUrl').value = merged.customBaseUrl || '';
   
-  $('language').value = merged.language || 'zh';
+  $('language').value = merged.language || 'auto';
+  updateEffectiveLangHint();
   $('maxTokens').value = merged.maxTokens || 2000;
   $('maxTokensValue').textContent = merged.maxTokens || 2000;
   $('temperature').value = merged.temperature || 0.7;
   $('temperatureValue').textContent = merged.temperature || 0.7;
-  $('autoSummarize').checked = merged.autoSummarize || false;
+  $('autoSummarize').checked = merged.autoSummarize !== false;
+  $('debugMode').checked = !!merged.debugMode;
   
   // 设置选中的提供商
   selectProvider(merged.aiProvider || 'openai');
@@ -96,9 +99,10 @@ function bindEvents() {
   document.querySelectorAll('.provider-card').forEach(card => {
     card.addEventListener('click', () => {
       selectProvider(card.dataset.provider);
+      autoSave();
     });
   });
-  
+
   // 密码可见性切换
   document.querySelectorAll('.toggle-visibility').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -109,36 +113,109 @@ function bindEvents() {
       }
     });
   });
-  
+
   // 范围滑块
   $('maxTokens').addEventListener('input', (e) => {
     $('maxTokensValue').textContent = e.target.value;
   });
-  
+
   $('temperature').addEventListener('input', (e) => {
     $('temperatureValue').textContent = parseFloat(e.target.value).toFixed(1);
   });
-  
-  // 保存按钮
-  $('saveBtn').addEventListener('click', saveSettings);
-  
+
+  // 自动保存：所有可输入控件
+  setupAutoSave();
+
   // 重置按钮
   $('resetBtn').addEventListener('click', resetSettings);
-  
+
   // 测试连接
   $('testBtn').addEventListener('click', testConnection);
-  
+
   // 数据管理
   $('exportDataBtn').addEventListener('click', exportData);
   $('clearDataBtn').addEventListener('click', clearData);
-  
-  // 键盘快捷键
-  document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-      e.preventDefault();
-      saveSettings();
-    }
+
+  // 诊断
+  $('exportLogsBtn').addEventListener('click', exportLogs);
+  $('clearLogsBtn').addEventListener('click', clearLogs);
+  refreshLogsCount();
+  // 当日志变化时实时刷新
+  if (chrome.storage?.onChanged) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && changes.tldrLogs) refreshLogsCount();
+    });
+  }
+}
+
+// ===== 自动保存（防抖 400ms） =====
+let _autoSaveTimer = null;
+function autoSave() {
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer = setTimeout(() => { saveSettings({ silent: false }); }, 400);
+}
+
+function setupAutoSave() {
+  // 文本/密码输入：input 事件
+  document.querySelectorAll('.form-input').forEach(el => {
+    el.addEventListener('input', autoSave);
   });
+  // 下拉框：change 事件
+  document.querySelectorAll('.form-select').forEach(el => {
+    el.addEventListener('change', autoSave);
+  });
+  // 范围滑块：input 事件（已绑定预览，再追加自动保存）
+  ['maxTokens', 'temperature'].forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener('input', autoSave);
+  });
+  // 复选框（toggle）
+  $('autoSummarize').addEventListener('change', autoSave);
+  $('debugMode').addEventListener('change', autoSave);
+  // 提供商 radio
+  document.querySelectorAll('input[name="aiProvider"]').forEach(el => {
+    el.addEventListener('change', autoSave);
+  });
+  // 语言切换时，立即刷新"当前生效"提示
+  $('language').addEventListener('change', updateEffectiveLangHint);
+}
+
+// ===== 当前生效语言提示 =====
+function resolveEffectiveLanguage(value) {
+  if (!value || value === 'auto') {
+    try {
+      const ui = (chrome.i18n && typeof chrome.i18n.getUILanguage === 'function')
+        ? chrome.i18n.getUILanguage()
+        : null;
+      return ui || navigator.language || 'en';
+    } catch (_) {
+      return navigator.language || 'en';
+    }
+  }
+  return value;
+}
+
+function getLanguageDisplayName(code, displayLocale) {
+  try {
+    const dn = new Intl.DisplayNames([displayLocale || code || 'en'], { type: 'language' });
+    return dn.of(code) || code;
+  } catch (_) {
+    return code;
+  }
+}
+
+function updateEffectiveLangHint() {
+  const el = $('effectiveLangHint');
+  if (!el) return;
+  const value = $('language').value;
+  const eff = resolveEffectiveLanguage(value);
+  const nameLocal = getLanguageDisplayName(eff, eff);
+  const nameEn = getLanguageDisplayName(eff, 'en');
+  const isAuto = !value || value === 'auto';
+  const display = nameLocal && nameLocal !== nameEn
+    ? `${nameLocal} / ${nameEn} (${eff})`
+    : `${nameLocal || nameEn} (${eff})`;
+  el.textContent = isAuto ? `${display} · 跟随浏览器` : display;
 }
 
 // ===== 获取当前设置 =====
@@ -160,31 +237,17 @@ function getCurrentSettings() {
     language: $('language').value,
     maxTokens: parseInt($('maxTokens').value),
     temperature: parseFloat($('temperature').value),
-    autoSummarize: $('autoSummarize').checked
+    autoSummarize: $('autoSummarize').checked,
+    debugMode: $('debugMode').checked
   };
 }
 
 // ===== 保存设置 =====
 async function saveSettings() {
   const settings = getCurrentSettings();
-  
-  // 验证必填项
-  const provider = settings.aiProvider;
-  const validations = {
-    openai: () => settings.openaiApiKey,
-    claude: () => settings.claudeApiKey,
-    gemini: () => settings.geminiApiKey,
-    custom: () => settings.customApiKey && settings.customModel && settings.customBaseUrl
-  };
-  
-  if (validations[provider] && !validations[provider]()) {
-    showToast('请填写必要的API配置信息', 'error');
-    return;
-  }
-  
   try {
     await chrome.storage.sync.set(settings);
-    showToast('✅ 设置已保存');
+    showToast('✅ 已自动保存');
   } catch (err) {
     showToast(`保存失败: ${err.message}`, 'error');
   }
@@ -292,6 +355,62 @@ async function clearData() {
   await loadSettings();
   
   showToast('✅ 所有数据已清除');
+}
+
+// ===== 诊断日志 =====
+async function refreshLogsCount() {
+  try {
+    const { tldrLogs = [] } = await chrome.storage.local.get('tldrLogs');
+    const el = $('logsCount');
+    if (el) el.textContent = `已记录：${tldrLogs.length} 条`;
+  } catch (_) {}
+}
+
+async function exportLogs() {
+  try {
+    const { tldrLogs = [] } = await chrome.storage.local.get('tldrLogs');
+    if (!tldrLogs.length) {
+      showToast('暂无诊断日志', 'error');
+      return;
+    }
+    // 同时把当前设置（隐藏 API Key）一并附上，方便排查
+    const settings = await chrome.storage.sync.get(null);
+    const safeSettings = { ...settings };
+    ['openaiApiKey', 'claudeApiKey', 'geminiApiKey', 'customApiKey'].forEach(k => {
+      if (safeSettings[k]) safeSettings[k] = '***hidden***';
+    });
+
+    const dump = {
+      version: '1.0.0',
+      exportTime: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      browserLanguage: navigator.language,
+      settings: safeSettings,
+      logs: tldrLogs
+    };
+
+    const blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `TLDR诊断日志_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ 诊断日志已导出');
+  } catch (err) {
+    showToast(`导出失败: ${err.message}`, 'error');
+  }
+}
+
+async function clearLogs() {
+  if (!confirm('确定清空诊断日志？')) return;
+  try {
+    await chrome.storage.local.set({ tldrLogs: [] });
+    refreshLogsCount();
+    showToast('✅ 已清空诊断日志');
+  } catch (err) {
+    showToast(`清空失败: ${err.message}`, 'error');
+  }
 }
 
 // ===== 显示提示 =====

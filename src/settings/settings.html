@@ -17,6 +17,66 @@
     </header>
 
     <div class="settings-content">
+      <!-- 通用设置 -->
+      <section class="settings-section">
+        <h2 class="section-title">
+          <span class="section-icon">⚙️</span>
+          通用设置
+        </h2>
+        <div class="form-group">
+          <label class="form-label">回复 / 翻译目标语言</label>
+          <select id="language" class="form-select">
+            <option value="auto">跟随浏览器（默认）</option>
+            <option value="zh-CN">简体中文</option>
+            <option value="zh-TW">繁體中文</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="es">Español</option>
+            <option value="pt">Português</option>
+            <option value="ru">Русский</option>
+            <option value="ar">العربية</option>
+            <option value="hi">हिन्दी</option>
+            <option value="it">Italiano</option>
+            <option value="id">Bahasa Indonesia</option>
+            <option value="vi">Tiếng Việt</option>
+            <option value="th">ไทย</option>
+            <option value="tr">Türkçe</option>
+          </select>
+          <p class="form-hint">
+            用于摘要、对话回复、双语翻译的目标语言。"跟随浏览器"会自动读取你的浏览器语言；如需固定，可在下拉中选择具体语言。
+            <br>当前生效：<strong id="effectiveLangHint">—</strong>
+          </p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">最大回复长度（tokens）</label>
+          <div class="range-group">
+            <input type="range" id="maxTokens" min="500" max="8000" step="500" value="2000">
+            <span class="range-value" id="maxTokensValue">2000</span>
+          </div>
+          <p class="form-hint">越大回复越详细，但消耗更多token</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">创造性（Temperature）</label>
+          <div class="range-group">
+            <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7">
+            <span class="range-value" id="temperatureValue">0.7</span>
+          </div>
+          <p class="form-hint">0=精确保守，1=创意发散</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label toggle-label">
+            <span>打开页面时自动生成摘要</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="autoSummarize" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+        </div>
+      </section>
+
       <!-- AI提供商选择 -->
       <section class="settings-section">
         <h2 class="section-title">
@@ -176,46 +236,6 @@
         </div>
       </section>
 
-      <!-- 通用设置 -->
-      <section class="settings-section">
-        <h2 class="section-title">
-          <span class="section-icon">⚙️</span>
-          通用设置
-        </h2>
-        <div class="form-group">
-          <label class="form-label">回复语言</label>
-          <select id="language" class="form-select">
-            <option value="zh">中文</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">最大回复长度（tokens）</label>
-          <div class="range-group">
-            <input type="range" id="maxTokens" min="500" max="8000" step="500" value="2000">
-            <span class="range-value" id="maxTokensValue">2000</span>
-          </div>
-          <p class="form-hint">越大回复越详细，但消耗更多token</p>
-        </div>
-        <div class="form-group">
-          <label class="form-label">创造性（Temperature）</label>
-          <div class="range-group">
-            <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7">
-            <span class="range-value" id="temperatureValue">0.7</span>
-          </div>
-          <p class="form-hint">0=精确保守，1=创意发散</p>
-        </div>
-        <div class="form-group">
-          <label class="form-label toggle-label">
-            <span>打开页面时自动生成摘要</span>
-            <label class="toggle-switch">
-              <input type="checkbox" id="autoSummarize">
-              <span class="toggle-slider"></span>
-            </label>
-          </label>
-        </div>
-      </section>
-
       <!-- 测试连接 -->
       <section class="settings-section">
         <h2 class="section-title">
@@ -239,24 +259,44 @@
           <button class="btn-danger" id="clearDataBtn">🗑️ 清除所有数据</button>
         </div>
       </section>
-    </div>
 
-    <!-- 底部操作栏 -->
-    <footer class="settings-footer">
-      <div class="footer-info">
-        <span>TLDR v1.0.0</span>
-        <span>·</span>
-        <a href="https://github.com" target="_blank">GitHub</a>
-      </div>
-      <div class="footer-actions">
+      <!-- 诊断 -->
+      <section class="settings-section">
+        <h2 class="section-title">
+          <span class="section-icon">🩺</span>
+          诊断
+        </h2>
+        <div class="form-group">
+          <label class="form-label toggle-label">
+            <span>诊断模式（记录翻译/摘要的请求和返回，便于排查）</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="debugMode">
+              <span class="toggle-slider"></span>
+            </label>
+          </label>
+          <p class="form-hint">日志保存在本地 <code>chrome.storage.local</code> 中（最近 500 条），不会上传任何地方；导出后可发给开发者。关闭即停止记录。</p>
+        </div>
+        <div class="data-actions">
+          <button class="btn-secondary" id="exportLogsBtn">📥 导出诊断日志</button>
+          <button class="btn-danger" id="clearLogsBtn">🗑️ 清空日志</button>
+          <span id="logsCount" class="form-hint" style="margin-left:8px;align-self:center;">已记录：0 条</span>
+        </div>
+      </section>
+
+      <!-- 关于 / 底部操作（随页面滚动） -->
+      <section class="settings-section about-section">
         <button class="btn-secondary" id="resetBtn">重置默认</button>
-        <button class="btn-primary" id="saveBtn">保存设置</button>
-      </div>
-    </footer>
+        <div class="about-info">
+          <span>TLDR v1.0.0</span>
+          <span class="dot">·</span>
+          <a href="https://github.com/dimayip/tldr-extension" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
+      </section>
+    </div>
   </div>
 
-  <!-- 保存成功提示 -->
-  <div class="save-toast hidden" id="saveToast">✅ 设置已保存</div>
+  <!-- 自动保存提示 -->
+  <div class="save-toast hidden" id="saveToast">✅ 已自动保存</div>
 
   <script src="settings.js"></script>
 </body>

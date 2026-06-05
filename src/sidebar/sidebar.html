@@ -17,6 +17,7 @@
         </div>
         <div class="page-info" id="pageInfo">
           <span class="page-title" id="pageTitle">加载中...</span>
+          <span class="page-status hidden" id="pageStatus"></span>
         </div>
       </div>
       <div class="toolbar-right">
@@ -38,83 +39,48 @@
 
     <!-- 标签页切换 -->
     <div class="tabs">
-      <button class="tab-btn active" data-tab="summary">📝 摘要</button>
-      <button class="tab-btn" data-tab="chat">💬 对话</button>
+      <button class="tab-btn active" data-tab="chat">💬 对话</button>
       <button class="tab-btn" data-tab="notes">📌 笔记</button>
     </div>
 
-    <!-- 摘要面板 -->
-    <div class="tab-panel active" id="summaryPanel">
-      <div class="summary-actions">
-        <button class="action-btn primary" id="summarizeBtn">
-          <span class="btn-icon">✨</span>
-          <span>生成摘要</span>
-        </button>
-        <div class="summary-options">
-          <select id="summaryType" class="select-sm">
-            <option value="brief">简短摘要</option>
-            <option value="detailed">详细摘要</option>
-            <option value="bullets">要点列表</option>
-            <option value="outline">文章大纲</option>
-          </select>
-          <select id="summaryLang" class="select-sm">
-            <option value="zh">中文</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-      </div>
-      
-      <div class="summary-content" id="summaryContent">
-        <div class="empty-state" id="summaryEmpty">
-          <div class="empty-icon">📄</div>
-          <p>点击"生成摘要"按钮，AI将为您总结当前页面内容</p>
-        </div>
-        <div class="summary-result hidden" id="summaryResult">
-          <div class="result-header">
-            <span class="result-label">AI摘要</span>
-            <div class="result-actions">
-              <button class="mini-btn" id="copySummaryBtn" title="复制">📋</button>
-              <button class="mini-btn" id="saveSummaryBtn" title="保存到笔记">📌</button>
-            </div>
-          </div>
-          <div class="result-text" id="summaryText"></div>
-        </div>
-      </div>
-      
-      <!-- 快速问题 -->
-      <div class="quick-questions">
-        <div class="quick-title">快速提问</div>
-        <div class="quick-btns">
-          <button class="quick-btn" data-prompt="这篇文章的主要观点是什么？">主要观点</button>
-          <button class="quick-btn" data-prompt="文章中有哪些关键数据或事实？">关键数据</button>
-          <button class="quick-btn" data-prompt="请列出文章的优缺点">优缺点</button>
-          <button class="quick-btn" data-prompt="这篇文章对我有什么实际价值？">实用价值</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 对话面板 -->
-    <div class="tab-panel" id="chatPanel">
+    <!-- 对话面板（已合并摘要功能） -->
+    <div class="tab-panel active" id="chatPanel">
       <div class="chat-container">
         <div class="chat-messages" id="chatMessages">
-          <div class="welcome-msg">
+          <div class="welcome-msg" id="welcomeMsg">
             <div class="welcome-icon">🤖</div>
             <div class="welcome-text">
               <strong>你好！我是TLDR AI助手</strong>
-              <p>我已读取当前页面内容，你可以向我提问任何关于这篇文章的问题。</p>
+              <p>我已读取当前页面内容，可以为您总结要点或回答任何关于这篇文章的问题。</p>
             </div>
           </div>
         </div>
-        
+
+        <!-- 快速操作（摘要 / 翻译 / 提问 已合并） -->
+        <div class="quick-questions" id="quickQuestions">
+          <div class="quick-title">快速操作</div>
+          <div class="quick-btns">
+            <button class="quick-btn" data-action="summary" data-type="brief" title="生成简短摘要">✨ 生成摘要</button>
+            <button class="quick-btn" data-action="summary" data-type="detailed" title="详细总结全文">📝 详细摘要</button>
+            <button class="quick-btn" data-action="summary" data-type="bullets" title="以要点列表形式总结">• 要点列表</button>
+            <button class="quick-btn" data-action="summary" data-type="outline" title="生成结构化大纲">🗂 文章大纲</button>
+            <button class="quick-btn" data-action="translate" id="translateQuickBtn" title="开启/关闭整页双语对照翻译"><span id="translateBtnText">🌐 双语翻译</span></button>
+            <button class="quick-btn" data-prompt="这篇文章的主要观点是什么？">主要观点</button>
+            <button class="quick-btn" data-prompt="文章中有哪些关键数据或事实？">关键数据</button>
+            <button class="quick-btn" data-prompt="请列出文章的优缺点">优缺点</button>
+            <button class="quick-btn" data-prompt="这篇文章对我有什么实际价值？">实用价值</button>
+          </div>
+        </div>
+
         <div class="chat-input-area">
           <div class="context-indicator" id="contextIndicator">
             <span class="context-dot"></span>
             <span id="contextStatus">正在加载页面内容...</span>
           </div>
           <div class="input-wrapper">
-            <textarea 
-              id="chatInput" 
-              placeholder="输入你的问题... (Ctrl+Enter 发送)" 
+            <textarea
+              id="chatInput"
+              placeholder="输入你的问题... (Ctrl+Enter 发送)"
               rows="3"
               maxlength="2000"
             ></textarea>
@@ -146,15 +112,9 @@
       <div class="notes-list" id="notesList">
         <div class="empty-state">
           <div class="empty-icon">📌</div>
-          <p>还没有笔记，从摘要或对话中保存内容，或点击"新建笔记"</p>
+          <p>还没有笔记，从对话中保存内容，或点击"新建笔记"</p>
         </div>
       </div>
-    </div>
-
-    <!-- 加载遮罩 -->
-    <div class="loading-overlay hidden" id="loadingOverlay">
-      <div class="loading-spinner"></div>
-      <div class="loading-text" id="loadingText">AI思考中...</div>
     </div>
 
     <!-- 错误提示 -->

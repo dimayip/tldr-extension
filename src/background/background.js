@@ -20,8 +20,8 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     customApiKey: '',
     customModel: '',
     customBaseUrl: '',
-    language: 'zh',
-    autoSummarize: false,
+    language: 'auto',
+    autoSummarize: true,
     maxTokens: 2000,
     temperature: 0.7
   };
@@ -97,6 +97,9 @@ async function handleMessage(message, sender) {
       
     case 'AI_STREAM_CHAT':
       return await callAIStream(payload.messages, payload.settings, sender.tab?.id);
+
+    case 'AI_TRANSLATE':
+      return await aiTranslate(payload.items, payload.target);
       
     case 'GET_SETTINGS':
       return await getSettings();
@@ -356,3 +359,143 @@ async function callGemini(messages, settings) {
 }
 
 console.log('[TLDR] Background Service Worker 已启动');
+
+/**
+ * 批量翻译（沉浸式翻译用）
+ * @param {Array<{id:number,text:string}>} items
+ * @param {'zh'|'en'} target
+ */
+async function aiTranslate(items, target) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return { translations: {} };
+  }
+  const settings = await getSettings();
+  const hasKey = settings.openaiApiKey || settings.claudeApiKey || settings.geminiApiKey || settings.customApiKey;
+  if (!hasKey) throw new Error('请先配置 AI API Key');
+
+  // 解析目标语言（auto / 缺省 → 默认 en）
+  const lang = (!target || target === 'auto') ? 'en' : target;
+  const targetLabel = getLanguageDisplayNameSafe(lang, 'en') || lang;
+  const numbered = items.map(it => `[${it.id}] ${it.text}`).join('\n\n');
+
+  const systemPrompt = `You are a high-quality translation engine. Translate the user's numbered text segments into ${targetLabel} (BCP 47: ${lang}). Rules:
+1. Output translations only — no explanations, no original text, no preface.
+2. Strictly follow the format "id|||translation", one segment per line.
+3. Replace any line breaks inside a translation with spaces so each segment occupies a single line.
+4. Keep proper nouns, numbers, URLs, and variable names unchanged.
+5. CRITICAL: Any token of the form ⟪K0⟫, ⟪K1⟫, ⟪K2⟫, ... is a placeholder that wraps code / inline-code / URLs and MUST be kept verbatim, character-by-character (including the ⟪⟫ brackets and the digits). Do NOT translate, reorder, merge, drop, or rewrite them. Place each placeholder where it naturally belongs in the translation.
+6. Match the original style (formal/casual). Translations must read naturally and fluently.`;
+
+  const userPrompt = `Translate the following segments into ${targetLabel}:
+
+${numbered}
+
+Reply in this exact format only (one segment per line, nothing else):
+id|||translation`;
+
+  // 使用更低 temperature 的设置，避免发挥
+  const transSettings = { ...settings, temperature: 0.2, maxTokens: Math.max(settings.maxTokens || 2000, 2000) };
+
+  // 诊断：请求阶段
+  await recordLog('background', 'translate.request', {
+    target: lang,
+    targetLabel,
+    provider: settings.aiProvider,
+    model: settings.openaiModel || settings.claudeModel || settings.geminiModel || settings.customModel,
+    items
+  });
+
+  let result;
+  try {
+    result = await callAI(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      transSettings
+    );
+  } catch (err) {
+    await recordLog('background', 'translate.error', { message: err.message });
+    throw err;
+  }
+
+  const translations = parseTranslationResult(result.content || '');
+
+  // 诊断：响应阶段
+  await recordLog('background', 'translate.response', {
+    target: lang,
+    rawContent: (result.content || '').slice(0, 8000),
+    translations,
+    usage: result.usage
+  });
+
+  return { translations };
+}
+
+function getLanguageDisplayNameSafe(code, displayLocale) {
+  try {
+    const dn = new Intl.DisplayNames([displayLocale || 'en'], { type: 'language' });
+    return dn.of(code) || code;
+  } catch (_) {
+    return code;
+  }
+}
+
+// ===== 诊断日志（受 settings.debugMode 控制） =====
+const TLDR_LOG_LIMIT = 500;
+
+async function recordLog(scope, action, data) {
+  try {
+    const { debugMode } = await chrome.storage.sync.get('debugMode');
+    if (!debugMode) return;
+    const { tldrLogs = [] } = await chrome.storage.local.get('tldrLogs');
+    tldrLogs.push({
+      t: new Date().toISOString(),
+      scope,
+      action,
+      data: safeTruncate(data)
+    });
+    while (tldrLogs.length > TLDR_LOG_LIMIT) tldrLogs.shift();
+    await chrome.storage.local.set({ tldrLogs });
+  } catch (_) { /* ignore */ }
+}
+
+function safeTruncate(obj, maxStr = 2000) {
+  try {
+    return JSON.parse(JSON.stringify(obj, (_, v) => {
+      if (typeof v === 'string' && v.length > maxStr) return v.slice(0, maxStr) + `…[+${v.length - maxStr}]`;
+      return v;
+    }));
+  } catch (_) {
+    return String(obj);
+  }
+}
+
+function parseTranslationResult(text) {
+  const map = {};
+  const lines = text.split(/\r?\n/);
+  let currentId = null;
+  let buffer = [];
+  const flush = () => {
+    if (currentId !== null) {
+      const joined = buffer.join(' ').trim();
+      if (joined) map[currentId] = joined;
+    }
+    currentId = null;
+    buffer = [];
+  };
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    const m = line.match(/^\[?(\d+)\]?\s*(?:\|\|\||:|：|-|—)\s*(.*)$/);
+    if (m) {
+      flush();
+      currentId = parseInt(m[1], 10);
+      if (m[2]) buffer.push(m[2]);
+    } else if (currentId !== null) {
+      buffer.push(line);
+    }
+  }
+  flush();
+  return map;
+}
