@@ -22,3 +22,5 @@ npm-debug.log*
 # Environment variables
 .env
 .env.local
+
+publish-screenshots/

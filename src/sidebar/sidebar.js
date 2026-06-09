@@ -1110,7 +1110,10 @@ function sendMessage(message) {
 function renderMarkdown(text) {
   if (!text) return '';
 
-  return text
+  // 先转义 HTML，防止 XSS
+  const escaped = escapeHtml(text);
+
+  return escaped
     // 代码块
     .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
     // 行内代码

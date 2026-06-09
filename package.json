@@ -1,0 +1,24 @@
+{
+  "name": "tldr-extension",
+  "version": "1.0.0",
+  "description": "> 🚀 AI驱动的智能阅读助手，支持网页、PDF、Word文档摘要与上下文对话，类似Google NotebookLM",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dimayip/tldr-extension.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/dimayip/tldr-extension/issues"
+  },
+  "homepage": "https://github.com/dimayip/tldr-extension#readme",
+  "dependencies": {
+    "puppeteer-core": "^25.1.0"
+  }
+}
